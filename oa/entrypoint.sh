@@ -43,6 +43,21 @@ run_node() {
 # Railway injects PORT (8080) and the Railway healthcheck dials it, so the public edge port is the injected one.
 export OA_PUBLIC_PORT="${PORT:-8080}"
 export NODE_ENV=production ENVIRONMENT=production LOG_LEVEL="${LOG_LEVEL:-info}"
+# Literal settings live here, not in the template: a literal template variable publishes as a required blank field.
+: "${PRODUCT_NAME:=Open Analytics}"
+: "${QUERY_SIGNING_KEY_ID:=oa-railway-1}"
+: "${CLICKHOUSE_DB:=analytics}"
+: "${CLICKHOUSE_DATABASE:=analytics}"
+: "${CLICKHOUSE_INGEST_USER:=oa_ingest}"
+: "${CLICKHOUSE_READ_USER:=oa_read}"
+: "${CLICKHOUSE_MAINTENANCE_USER:=oa_maintenance}"
+: "${CLICKHOUSE_MIGRATION_USER:=oa_migration}"
+: "${ANONYMOUS_IDENTITY_KEY_VERSION:=1}"
+: "${AUTH_PASSWORD_SIGNIN:=enabled}"
+: "${AUTH_COOKIE_SAMESITE:=none}"
+: "${EMAIL_FROM:=Open Analytics <analytics@localhost>}"
+export PRODUCT_NAME QUERY_SIGNING_KEY_ID CLICKHOUSE_DB CLICKHOUSE_DATABASE CLICKHOUSE_INGEST_USER CLICKHOUSE_READ_USER \
+  CLICKHOUSE_MAINTENANCE_USER CLICKHOUSE_MIGRATION_USER ANONYMOUS_IDENTITY_KEY_VERSION AUTH_PASSWORD_SIGNIN AUTH_COOKIE_SAMESITE EMAIL_FROM
 # Peers publish their private names through project-scoped variables set in the template.
 case "$ROLE" in
   migrate)
