@@ -118,6 +118,11 @@ case "$ROLE" in
     run_node "${OA_PUBLIC_PORT}" 0
     ;;
   web)
+    # A project-scoped URL reference is a bare host that stays empty while the referenced service does not exist yet (the generate
+    # project builds web before api). The upstream entrypoint refuses "https://", so boot on a placeholder; a real deploy always resolves.
+    for v in NEXT_PUBLIC_API_URL NEXT_PUBLIC_REALTIME_URL NEXT_PUBLIC_COLLECTOR_URL; do
+      case "${!v:-}" in "https://"|"http://") log "$v has no host yet; using a placeholder until the referenced service exists" >&2; export "$v=https://pending.invalid" ;; esac
+    done
     export PORT="${OA_PUBLIC_PORT}"
     exec sh /repo/apps/web/docker-entrypoint.sh
     ;;
