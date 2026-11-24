@@ -1,0 +1,48 @@
+name: Build and push Docker images
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: openanalytics-railway-api, context: ., base: "ghcr.io/openlabs-so/openanalytics/api:v0.8.0@sha256:dba94e6f589b59f3b87f18625e1cb21ca582f8cb92dc5b993d6e3e5db60faa17", role: api, front: "1"}
+          - {name: openanalytics-railway-gateway, context: ., base: "ghcr.io/openlabs-so/openanalytics/query-gateway:v0.8.0@sha256:204aab1f98ae800f83299ab2a84dce3463783e9c68242c6e61bafa5960e2f4bb", role: gateway, front: "0"}
+          - {name: openanalytics-railway-collector, context: ., base: "ghcr.io/openlabs-so/openanalytics/collector:v0.8.0@sha256:bc669488aa34918f1c11915fa20e8afb8aa599f71ae7640156750bf70ed3cac6", role: collector, front: "1"}
+          - {name: openanalytics-railway-realtime, context: ., base: "ghcr.io/openlabs-so/openanalytics/realtime:v0.8.0@sha256:304e04a3423dd62f1c96ed7067aefc09069dc4528bd8868dc37865cacc80681a", role: realtime, front: "1"}
+          - {name: openanalytics-railway-worker, context: ., base: "ghcr.io/openlabs-so/openanalytics/worker:v0.8.0@sha256:039beb9ac4c8b95e346df977fd02d60d6a492646c4d7dbef94cf568938f8474d", role: worker, front: "0"}
+          - {name: openanalytics-railway-migrate, context: ., base: "ghcr.io/openlabs-so/openanalytics/migrate:v0.8.0@sha256:f9f81b4d1fc3d8f1a272ccc9b7d10eebdcc5c8250af709bd1cb1d72cb7dfa9a1", role: migrate, front: "0"}
+          - {name: openanalytics-railway-web, context: ., base: "ghcr.io/openlabs-so/openanalytics/web:v0.8.0@sha256:ff88f61994181a97c9d77424c638aa65bf12c636762d88c7caa51b5e9135f0f2", role: web, front: "0"}
+          - {name: openanalytics-railway-clickhouse, context: clickhouse, base: "ghcr.io/openlabs-so/openanalytics/clickhouse:v0.8.0@sha256:5e89e7b5403c7c521e446d929ede70824b907004a2ea9325c2dce3ff5ff38ccc"}
+          - {name: openanalytics-railway-valkey-queue, context: valkey, base: "ghcr.io/openlabs-so/openanalytics/valkey:v0.8.0@sha256:6763a82e400003ab4603854c1b386de0bbeeadf122f155ac75a58d2869c08de9", conf: valkey-queue}
+          - {name: openanalytics-railway-valkey-realtime, context: valkey, base: "ghcr.io/openlabs-so/openanalytics/valkey:v0.8.0@sha256:6763a82e400003ab4603854c1b386de0bbeeadf122f155ac75a58d2869c08de9", conf: valkey-realtime}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/bon5co/${{ matrix.name }}:latest
+          build-args: |
+            BASE=${{ matrix.base }}
+            ROLE=${{ matrix.role }}
+            FRONT=${{ matrix.front }}
+            CONF=${{ matrix.conf }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

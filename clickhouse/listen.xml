@@ -1,0 +1,4 @@
+<clickhouse>
+  <listen_host replace="replace">::</listen_host>
+  <listen_try>1</listen_try>
+</clickhouse>
